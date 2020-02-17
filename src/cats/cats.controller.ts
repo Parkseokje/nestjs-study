@@ -1,18 +1,23 @@
 import { Controller, Get, Req, Res, Post, Param, Body, HttpException, HttpStatus, UseFilters, ForbiddenException } from '@nestjs/common';
 import { Request, Response } from 'express';
-import { CreateCatDto } from './cats.dto';
+import { CreateCatDto } from './dto/cats.dto';
+import { CatsService } from "./cats.service";
+import { Cat } from "./interfaces/cat.interface";
 import { HttpExceptionFilter } from 'src/filters/http-exception.filter';
 
 @Controller('cats')
 export class CatsController {
+  constructor(private readonly catsService: CatsService) {}
 
   @Get()
-  async findAll(): Promise<any[]> {
-    return new Promise((resolve) => {
-      setTimeout(resolve, 2000);
-    }).then(function () {
-      return ['cat1', 'cat3'];
-    })
+  async findAll(): Promise<Cat[]> {
+    return this.catsService.findAll();
+
+    // return new Promise((resolve) => {
+    //   setTimeout(resolve, 2000);
+    // }).then(function () {
+    //   return ['cat1', 'cat3'];
+    // })
   }
 
   @Get('error')
@@ -25,7 +30,7 @@ export class CatsController {
     //   error: 'This is a custom message.'
     // }, 403)
     throw new ForbiddenException();
-  }  
+  }
 
   @Get(':id')
   findOne(@Param() params): string {
@@ -34,9 +39,10 @@ export class CatsController {
   }
 
   @Post()
-  create(@Body() createCatDto: CreateCatDto): string {
-    console.log(createCatDto.name);
-    return 'This action adds a new cat.'
+  create(@Body() createCatDto: CreateCatDto) {
+    this.catsService.create(createCatDto);
+    // console.log(createCatDto.name);
+    // return 'This action adds a new cat.'
   }
 
   @Get('express')
