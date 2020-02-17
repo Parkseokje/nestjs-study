@@ -1,4 +1,4 @@
-import { Controller, Get } from '@nestjs/common';
+import { Controller, Get, Redirect, Query } from '@nestjs/common';
 import { AppService } from './app.service';
 
 @Controller()
@@ -9,4 +9,12 @@ export class AppController {
   getHello(): string {
     return this.appService.getHello();
   }
+
+  @Get('docs')
+  @Redirect('http://docs.nestjs.com', 302)
+  getDocs(@Query('version') version) {
+    if (version && version === '5') {
+      return { url: 'https://docs.nestjs.com/v5' }
+    }
+  }  
 }
