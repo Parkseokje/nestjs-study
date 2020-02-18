@@ -93,6 +93,17 @@ Receive specific request for the application
   - Determine the DTO(Data Transfer Object. is an object how the data will be sent over network.)
   - DTO can be written via Typescript interfaces, or by simple classes(Recommended).
 
+      ```javascript
+      export class CreateCatDto {
+        readonly name: string;
+        readonly age: number;
+        readonly breed: string;
+      }
+
+      @Post()
+      create(@Body() createCatDto: CreateCatDto) {}
+      ```
+
 - Handlig Errors
 
   - (Decorator) HttpException
@@ -197,7 +208,7 @@ Providers are plain JavaScript classes with an `@Injectable()` decorator.
     private readonly httpClient: T;
   }
   ```
-  
+
 - Provider registration
 
   ```javascript
@@ -211,32 +222,109 @@ Providers are plain JavaScript classes with an `@Injectable()` decorator.
 
 A Class annotated with a `@Module` decorator.
 
-  - (Decorator) @Module: Provides metadata that Nest makes use of to organize the application structure. It takes a single object whose
+- (Decorator) @Module: Provides metadata that Nest makes use of to organize the application structure. It takes a single object whose
   properties describe the module
 
-    - providers
-    - controllers
-    - imports
-    - exports
+  - providers
+  - controllers
+  - imports
+  - exports
 
-  - Feature Module
+- Feature Module
 
-    A feature module simply organizes code relevant for a specific feature, keeping code organized.
+  A feature module simply organizes code relevant for a specific feature, keeping code organized.
 
-    ```javascript
-    // cats/cats.module.ts
-    @Module({
-      controllers: [CatsController],
-      providers: [CatsService]
-    })
-    export class CatsModule {}
-    ```
+  ```javascript
+  // cats/cats.module.ts
+  @Module({
+    controllers: [CatsController],
+    providers: [CatsService],
+  })
+  export class CatsModule {}
+  ```
 
-  - Create a module using CLI
+- Shared modules
 
-    ```bash
-    $ npx nest g module cats
-    ```    
+  Once created it can be reused by any module.
+  In order to do that, we first need to export service.
+  any module that imports CatsModule has access to CatsService
+  and will share the **same instance** with all other modules that import it as well.
 
+  ```javascript
+  @Module({
+    ...
+    exports: [CatsService]
+  })
+  export class CatsModule {}
+  ```
 
+- Module re-exporting
 
+  Modules can re-export modules that they import.
+
+  ```javascript
+  @Module({
+    imports: [CommonModule],
+    exports: [CommonModule]
+  })
+  export class CoreModule {}
+  ```
+
+- Dependency injection
+
+  A module class can inject providers. (e.g., for configuation purposes)
+  But modules classes themselves cannot be injected as providers due to circular dependency.
+
+  ```javascript
+  export class CatsModule {
+    constructor(private readonly catsService: CatsService) {}
+  }
+  ```
+
+- Global modules
+
+  When you want to provide a set of providers which should be available everywhere(e.g., helpers, database connections etc.), make the module global with the `@Global` decorator.
+  Global modules should be registered only once, generally by the root or core module.
+  Making everything global is not a good design decition. `imports` is generally the preferred way.
+
+  ```javascript
+  @Global()
+  @Module({
+    ...
+  })
+  export class CatsModule {}
+  ```
+
+- Dynamic modules
+
+  This feature enables you to easily create customizable modules that can register and configure providers dynamically.
+
+  ```javascript
+  @Module({
+    providers: [Connection]
+  })
+  export class DatabaseModule {
+    static forRoot(entties = [], options?): DynamicModule {
+      const providers = createDatabaseProviders(options, entities);
+      return {
+        module: DatabaseModule,
+        providers: providers,
+        exports: providers
+      }
+    }
+  }
+
+  @Module({
+    imports: [DatabaseModule.forRoot([User])]
+  })
+  export class AppModule {}
+  ```
+
+  - [Dynamic module deep dive](https://docs.nestjs.com/fundamentals/dynamic-modules)
+  - [Working example](https://github.com/nestjs/nest/tree/master/sample/25-dynamic-modules)
+
+- Create a module using CLI
+
+  ```bash
+  $ npx nest g module cats
+  ```
